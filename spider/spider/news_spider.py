@@ -1,5 +1,3 @@
-# -*- coding:utf8 -*-
-
 __author__ = 'Fang.Xu'
 
 import urllib2
@@ -14,7 +12,7 @@ from util.user_agents import user_agent_list
 
 class NewsSpider(object):
     def __init__(self):
-        self.total_page_count = None
+        pass
 
     def __load_html(self, url):
         try:
@@ -28,16 +26,6 @@ class NewsSpider(object):
             time.sleep(random.randint(10, 15))
             return None
 
-    def get_total_page_count(self, url):
-        content = self.__load_html(url)
-        while content is None:
-            content = self.__load_html(url)
-        soup = bs4.BeautifulSoup(content, "html.parser")
-        div = soup.find('div', class_ = 'page')
-        strong = div.findAll('strong')
-        total_pages = int(strong[1].string)
-        return total_pages
-
     def parse_list(self, url, news_type):
         print 'grab ing ' + url
         should_continue = True
@@ -45,37 +33,46 @@ class NewsSpider(object):
         while content is None:
             content = self.__load_html(url)
         soup = bs4.BeautifulSoup(content, "html.parser")
-        ul = soup.find('ul', class_ = 'ullist')
-        news = ul.findAll('li')
-        for n in news:
-            u = urlparse.urlparse(n.p.a['href'])
-            if u.scheme is '':
-                item = dict()
-                title = string.strip(n.div.h1.a['title'])
+        li = soup.find('li', class_ = 'pane active')
+        news = li.findAll('a')
+        for a in news:
+            href = a['href']
+            date, nid = self.__get_date_id_of_per_new(href)
+            item = dict()
+            item['date'] = date
+            item['nid'] = nid
+            newslogo = a.find('div', class_ = 'news_logo')
+            background = ''
+            if newslogo is not None:
+                background = urlparse.urljoin(url, newslogo.img['src'])
+            item['background'] = background
+            newsmsg = a.find('div', class_ = 'news_msg')
+            title = ''
+            h2 = newsmsg.find('h2', class_ = 'title')
+            if h2 is not None:
+                title = string.strip(h2.string)
                 title = string.replace(title, '"', '')
                 title = string.replace(title, "'", '')
-                item['title'] = title
-                item['background'] = urlparse.urljoin(url, n.p.a.img['src'])
-                href = n.p.a['href']
-                date, nid = self.__get_date_id_of_per_new(href)
-                item['date'] = date
-                item['nid'] = nid
-                p1 = n.div.find('p', class_ = 'time')
-                item['time'] = p1.string
-                p2 = n.div.find('p', class_ = 'desc')
-                description = p2.string
-                if description is None:
-                    description = ''
-                else:
-                    description = string.strip(description)
-                    description = string.replace(description, '"', '')
-                    description = string.replace(description, "'", '')
-                item['description'] = description
-                if gl.sql_operator.is_news_in_db(news_type, nid) is False:
-                    gl.sql_operator.insert_news_in_table(news_type, item)
-                else:
-                    should_continue = False
-                    break
+            item['title'] = title
+            pcontent = newsmsg.find('p', class_ = 'content')
+            description = ''
+            if pcontent is not None:
+                description = pcontent.string
+                description = string.strip(description)
+                description = string.replace(description, '"', '')
+                description = string.replace(description, "'", '')
+            item['description'] = description
+            pdate = newsmsg.find('p', class_ = 'date')
+            time = ''
+            if pdate is not None:
+                time = pdate.string
+            item['time'] = time
+
+            if gl.sql_operator.is_news_in_db(news_type, nid) is False:
+                gl.sql_operator.insert_news_in_table(news_type, item)
+            else:
+                should_continue = False
+                break
         return should_continue
 
     def get_next_news_page_url(self, url):
@@ -86,12 +83,7 @@ class NewsSpider(object):
         url_index = string.atoi(prefix[x_index + 1:])
         prefix = prefix[:x_index + 1]
         next_url_index = url_index + 1
-        if self.total_page_count is None:
-            self.total_page_count = self.get_total_page_count(url)
-        if next_url_index > self.total_page_count:
-            next_url = None
-        else:
-            next_url = prefix + str(next_url_index) + suffix
+        next_url = prefix + str(next_url_index) + suffix
         return next_url
 
     def __get_date_id_of_per_new(self, href):
@@ -112,7 +104,6 @@ class NewsSpider(object):
                 url = target_urls.dota2_update
             return url
 
-        self.total_page_count = None
         url = get_url(news_type)
         while True:
             should_continue = self.parse_list(url, news_type)

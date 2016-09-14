@@ -1,5 +1,3 @@
-# -*- coding:utf8 -*-
-
 __author__ = 'Fang.Xu'
 
 import urllib2

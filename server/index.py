@@ -1,7 +1,5 @@
 #-*- coding:utf-8 -*-
 
-__author__ = 'Fang.Xu'
-
 def app(environ, start_response):
     status = '200 OK'
     headers = [('Content-type', 'text/html')]

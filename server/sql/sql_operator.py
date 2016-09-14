@@ -1,6 +1,4 @@
-# -*- coding:utf8 -*-
-
-__author__ = 'Fang.Xu'
+# -*- coding:utf-8 -*-
 
 import MySQLdb
 import string
@@ -21,7 +19,6 @@ class SqlOperator(object):
         dbc.execute('SET CHARACTER SET utf8;')
         dbc.execute('SET character_set_connection=utf8;')
 
-    # query
     def get_videos_from_table(self, video_type, from_vid, size):
         table = self._get_video_table_name(video_type)
         cursor = self.db.cursor()

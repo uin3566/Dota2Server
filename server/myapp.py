@@ -1,5 +1,3 @@
-#-*- coding:utf-8 -*-
-
 __author__ = 'Fang.Xu'
 
 from flask import Flask
@@ -8,6 +6,8 @@ from data.data_center import DataCenter
 from spider.article_detail_processor import ArticleDetailProcessor
 from sql.sql_operator import SqlOperator
 from util import api
+from bos import bos_conf
+from baidubce.services.bos.bos_client import BosClient
 import gl
 
 app = Flask(__name__)
@@ -25,6 +25,8 @@ def before_request():
     video_detail_spider = VideoDetailProcessor()
     gl.sql_operator = SqlOperator()
     gl.sql_operator.connect()
+    gl.bucket_name = "dota2bucket"
+    gl.bos_client = BosClient(bos_conf.config)
 
 
 @app.route(api.newsrefresh, methods=['GET'])
